@@ -1,0 +1,28 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: green;
+  min-height: 70px;
+  font-size: 20px;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.App-header button {
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.generated-form {
+  margin-top: 20px;
+  padding: 20px;
+  border: 2px solid
+}
+
+.form-element {
+  margin-bottom: 10px;
+}
