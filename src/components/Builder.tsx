@@ -1,40 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
-const FormBuilder: React.FC = () => {
-  const [options, setOptions] = useState({ input: 0, textarea: 0, checkbox: 0 });
-  const [form, setForm] = useState<React.ReactNode[]>([]);
+interface FormBuilderProps {
+  onFormBuilt: (elements: React.ReactNode[]) => void;
+}
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof options) =>
-    setOptions(prev => ({ ...prev, [key]:  parseInt(e.target.value, 10) || 0 }));
+const FormBuilder: React.FC<FormBuilderProps> = ({ onFormBuilt }) => {
+  const [counts, setCounts] = useState({ input: 0, textarea: 0, checkbox: 0 });
+  const [showFormControls, setShowFormControls] = useState(false);
 
-  const buildForm = () => {
-    const elements = [];
-    for (let i = 0; i < options.input; i++) elements.push(<input key={`input-${i}`} type="text" placeholder={`Input ${i + 1}`} />);
-    for (let i = 0; i < options.textarea; i++) elements.push(<textarea key={`textarea-${i}`} placeholder={`Textarea ${i + 1}`} />);
-    for (let i = 0; i < options.checkbox; i++) {
-      const id = `checkbox-${i}`;
-      elements.push(<div key={id}><input type="checkbox" id={id} /><label htmlFor={id}>{`Checkbox ${i + 1}`}</label></div>);
-    }
-    setForm(elements);
-  };
-
-  const renderInput = (label: string, key: keyof typeof options) => (
-    <div>
-      <label>{label}: </label>
-      <input type="number" value={options[key]} onChange={e => handleChange(e, key)}  />
-    </div>
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>, key: keyof typeof counts) => {
+      setCounts(prev => ({ ...prev, [key]: parseInt(e.target.value, 10) || 0 }));
+    },
+    []
   );
 
-  return (
-    <div>
-      <h2>Конструктор</h2>
-      {['Input', 'Textarea', 'Checkbox'].map(type => renderInput(type, type.toLowerCase() as keyof typeof options))}
-      <button onClick={buildForm}>Build</button>
-      <div className="generated-form">
-        <h3>Результат</h3>
-        {form.map((el, i) => <div key={i} className="form-element">{el}</div>)}
+  const buildForm = useCallback(() => {
+    const elements: React.ReactNode[] = [];
+
+    const createElements = (count: number, type: string, elementType: 'input' | 'textarea' | 'checkbox') => {
+      for (let i = 0; i < count; i++) {
+        const key = `${type}-${i}`;
+        const placeholder = `${type} ${i + 1}`; // Объединение в одну строку
+        elements.push(
+          elementType === 'checkbox' ? (
+            <div key={key}>
+              <input type="checkbox" id={key} />
+              <label htmlFor={key}>{placeholder}</label> </div>
+          ) : (
+            React.createElement(elementType, { key, placeholder })
+          )
+        );
+      }
+    };
+
+    createElements(counts.input, 'Input', 'input');
+    createElements(counts.textarea, 'Textarea', 'textarea');
+    createElements(counts.checkbox, 'Checkbox', 'checkbox');
+
+    onFormBuilt(elements);
+  }, [counts, onFormBuilt]);
+
+  const renderInput = useCallback(
+    (label: string, key: keyof typeof counts) => (
+      <div key={key}> {/* Добавили ключ для уникальности */}
+        <label>{label}: </label>
+        <input type="number" value={counts[key]} onChange={e => handleChange(e, key)} />
       </div>
-    </div>
+    ),
+    [handleChange, counts]
+  );
+
+  const handleToggleFormControls = useCallback(() => {
+    setShowFormControls(!showFormControls);
+  }, [showFormControls]);
+
+  return (
+    <>
+      <h2>Конструктор</h2>
+      <button onClick={handleToggleFormControls}>{showFormControls ? 'Close' : 'Form'}</button>
+      {showFormControls && (
+        <>
+          {renderInput('Input', 'input')}
+          {renderInput('Textarea', 'textarea')}
+          {renderInput('Checkbox', 'checkbox')}
+          <button onClick={buildForm}>Build</button>
+        </>
+      )}
+    </>
   );
 };
 
